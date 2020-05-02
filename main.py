@@ -2,7 +2,6 @@ import secrets,string
 from collections import OrderedDict
 
 def write_roman(num):
-
     roman = OrderedDict()
     roman[1000] = "M"
     roman[900] = "CM"
@@ -80,7 +79,7 @@ class Reflector:
     def substitute(self,char):
         return to_char(self.alphabet.index(to_alphabet_pos(char)))
 
-rotors = [Rotor(int(input(f"Starting character for rotor {write_roman(i+1)}: "))) for i in range(3)]
+rotors = [Rotor(to_alphabet_pos(input(f"Starting character for rotor {write_roman(i+1)}: "))) for i in range(3)]
 rotors.append(Reflector())
 
 plaintext = input("Plaintext: ").upper()
