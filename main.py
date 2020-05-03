@@ -1,95 +1,64 @@
-import secrets,string
-from collections import OrderedDict
+import cipher,algo,secrets,store,time
 
-def write_roman(num):
-    roman = OrderedDict()
-    roman[1000] = "M"
-    roman[900] = "CM"
-    roman[500] = "D"
-    roman[400] = "CD"
-    roman[100] = "C"
-    roman[90] = "XC"
-    roman[50] = "L"
-    roman[40] = "XL"
-    roman[10] = "X"
-    roman[9] = "IX"
-    roman[5] = "V"
-    roman[4] = "IV"
-    roman[1] = "I"
+start = time.time()
 
-    def roman_num(num):
-        for r in roman.keys():
-            x, y = divmod(num, r)
-            yield roman[r] * x
-            num -= (r * x)
-            if num <= 0:
-                break
+mode = str(input("Encrypt (y/n): "))[0].lower()
 
-    return "".join([a for a in roman_num(num)])
+if mode == "y":
+    no_rotors = int(input("Number of rotors: "))
+    rotors = [cipher.Rotor(i,-1,secrets.randbelow(95),secrets.randbelow(95)) for i in range(no_rotors)]
+    plaintext = input("Plaintext: ")
+    ciphertext = ""
 
-# convert character in alphabet to alphabet pos integer
-def to_alphabet_pos(char):
-    return list(string.ascii_uppercase).index(char.upper())
-
-# convert character in alphabet to alphabet pos integer
-def to_char(pos):
-    return list(string.ascii_uppercase)[pos]
-
-# move to rotor position
-def cycle(list,pos):
-    for i in range(pos):
-        list.append(list[0])
-        list.pop(0)
-    return list
-
-# rotor to create substition cipher
-class Rotor:
-    # rotor using alphabet set at position pos
-    def __init__(self,offset=0):
-        self.alphabet = []
-        while len(self.alphabet) != 26:
-            random = secrets.randbelow(26)
-            if random not in self.alphabet:
-                self.alphabet.append(random)
-        self.offset = offset
-        self.alphabet = cycle(self.alphabet,self.offset)
-    
-    # move the rotor by x position(s)
-    def step(self,x=1):
-        self.offset = (self.offset + x) % len(self.alphabet)
-        self.alphabet = cycle(self.alphabet,self.offset)
-    
-    # substitute plaintext character with ciphertext character
-    def substitute(self,char):
-        self.step()
-        return to_char(self.alphabet.index(to_alphabet_pos(char)))
-
-class Reflector:
-    # rotor using alphabet set at position pos
-    def __init__(self,offset=0):
-        self.alphabet = []
-        while len(self.alphabet) != 26:
-            random = secrets.randbelow(26)
-            if random not in self.alphabet and len(self.alphabet) != random:
-                self.alphabet.append(random)
-        self.offset = offset
-        self.alphabet = cycle(self.alphabet,self.offset)
-    
-    # substitute plaintext character with ciphertext character
-    def substitute(self,char):
-        return to_char(self.alphabet.index(to_alphabet_pos(char)))
-
-rotors = [Rotor(to_alphabet_pos(input(f"Starting character for rotor {write_roman(i+1)}: "))) for i in range(3)]
-rotors.append(Reflector())
-
-plaintext = input("Plaintext: ").upper()
-ciphertext = ""
-for char in plaintext:
-    cipherchar = char
-    for i in range(2):
+    for char in plaintext:
+        cipherchar = char
         for rotor in rotors:
-            if i == 1 and rotors.index(rotor) == len(rotors)-1:
-                break
-            cipherchar = rotor.substitute(cipherchar)
-    ciphertext += cipherchar
-print(ciphertext)
+
+            try:
+                cipherchar = rotor.substitute(cipherchar)
+            except ValueError:
+                if cipherchar == " ":
+                    cipherchar = rotor.substitute("X")
+                cipherchar = cipherchar
+        ciphertext += cipherchar
+        print(cipherchar,end="")
+    print()
+
+    x = str(secrets.randbelow(1000))
+    while len(x) != 3:
+        x = "0" + x
+
+    store.store(rotors,"000")
+
+    # # print(algo.format(ciphertext,4))
+    # print(ciphertext)
+elif mode == "n":
+    rotor_settings = store.load(str(input("Rotor settings reference (3 digits): "))[:3])
+    rotors = []
+
+    for i in range(len(rotor_settings)):
+        rotor = rotor_settings[str(i)]
+        # if i == 0:
+        #     rotors.append(cipher.Spacer(i,rotor[0]))
+        # else:
+        rotors.append(cipher.Rotor(i,rotor[0],rotor[1],rotor[2]))
+    
+    ciphertext = input("Ciphertext: ")
+    plaintext = ""
+
+    for char in ciphertext:
+        plainchar = char
+        for x in range(len(rotors)-1,-1,-1):
+
+            try:
+                plainchar = rotors[x].substitute(plainchar,True)
+            except ValueError:
+                plainchar = plainchar
+        plaintext += plainchar
+        print(plainchar,end="")
+    print()
+else:
+    print("Output not recognised, please type only \'y\' or \'n\'")
+
+# execution time
+print(str(round((time.time() - start)*100))+"ms")
