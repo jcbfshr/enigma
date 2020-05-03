@@ -3,6 +3,34 @@ from collections import OrderedDict
 
 alphabet = [chr(i) for i in range(32,127)]
 
+# convert character in alphabet to alphabet pos integer
+def to_alphabet_pos(char):
+    return alphabet.index(char)
+
+# convert character in alphabet to alphabet pos integer
+def to_char(pos):
+    return alphabet[pos]
+
+# move to rotor position
+def cycle(list,pos):
+    for i in range(pos):
+        list.append(list[0])
+        list.pop(0)
+    return list
+
+# add space between every x characters in string
+def format(string,x):
+    list = [string[i:i+x] for i in range(0, len(string), x)]
+    string = ""
+    for i in range(len(list)):
+        string += list[i]
+        if (i+1) % x == 0:
+            string += "\n"
+        else:
+            string += " "
+    return string
+
+# convert integer to roman numeral
 def write_roman(num):
     roman = OrderedDict()
     roman[1000] = "M"
@@ -28,30 +56,3 @@ def write_roman(num):
                 break
 
     return "".join([a for a in roman_num(num)])
-
-# convert character in alphabet to alphabet pos integer
-def to_alphabet_pos(char):
-    return alphabet.index(char)
-
-# convert character in alphabet to alphabet pos integer
-def to_char(pos):
-    return alphabet[pos]
-
-# move to rotor position
-def cycle(list,pos):
-    for i in range(pos):
-        list.append(list[0])
-        list.pop(0)
-    return list
-
-# add space between every x characters in string
-def format(string,x):
-    list = [string[i:i+x] for i in range(0, len(string), x)]
-    string = ""
-    for i in range(len(list)):
-        string += list[i]
-        if (i+1) % 4 == 0:
-            string += "\n"
-        else:
-            string += " "
-    return string
