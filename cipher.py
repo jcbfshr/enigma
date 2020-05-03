@@ -1,10 +1,9 @@
-import algo,secrets,store
+import algo,secrets,store,random,progressbar
 
 # rotor to create substition cipher
 class Rotor:
     def __init__(self,number,alphabet=-1,offset=-1,turnover=-1,alphabet_size=95,disc_type="rotor"):
         # -1 values signify randomise
-        
         self.number = number
 
         if alphabet == -1:
@@ -70,7 +69,16 @@ class Spacer:
 # decyption module given plaintext and number of rotors to encrypt with
 def encrypt(plaintext,no_rotors):
     # randomise rotors
-    rotors = [Rotor(i+1,-1,secrets.randbelow(95),secrets.randbelow(95)) for i in range(no_rotors)]
+    rotors = []
+
+    widgets=[
+        ' [', progressbar.Timer(), '] ',
+        progressbar.Bar(marker="█"),
+        ' (', progressbar.ETA(), ') ',
+    ]
+
+    for i in progressbar.progressbar(range(no_rotors),widgets=widgets):
+        rotors.append(Rotor(i+1,-1,secrets.randbelow(95),secrets.randbelow(95)))
     rotors.insert(0,Spacer(0))
     ciphertext = ""
 
@@ -79,10 +87,12 @@ def encrypt(plaintext,no_rotors):
 
         for rotor in rotors:
             # if rotor is a spacer disc (controls random stepping of adjacent rotor)
-            if rotor.number == 0:
+            if rotor.disc_type == "spacer":
                 rotor.step()
-                rotors[1].step(rotor.alphabet[0])
+                rotors[rotors.index(rotor)+1].step(rotor.alphabet[0])
             else:
+                if rotor.alphabet[0] == rotor.turnover:
+                    rotors[rotors.index(rotor)+1].step()
                 # pass unsupported characters
                 try:
                     cipherchar = rotor.substitute(cipherchar)
@@ -93,9 +103,7 @@ def encrypt(plaintext,no_rotors):
         print(cipherchar,end="") # print characters as encrypted (stream)
     print()
 
-    x = str(secrets.randbelow(1000))
-    while len(x) != 3:
-        x = "0" + x
+    x = hex(random.getrandbits(128))
 
     store.store(rotors,x)
     return x
@@ -108,10 +116,11 @@ def decrypt(ciphertext,rotors):
         # return rotors to position when encrypting original char
         for rotor in rotors:
             # if rotor is a spacer disc (controls random stepping of adjacent rotor)
-            if rotor.type == "spacer":
+            if rotor.disc_type == "spacer":
                 rotor.step()
-                algo.cycle(rotors[1].alphabet,rotor.alphabet[0])
-
+                rotors[rotors.index(rotor)+1].step(rotor.alphabet[0])
+            elif rotor.alphabet[0] == rotor.turnover:
+                rotors[rotors.index(rotor)+1].step()
         plainchar = char
 
         # return encrypted char through rotors in opposite direction 

@@ -7,9 +7,9 @@ def store(rotors,filename,alphabet_size=95):
 
     for rotor in rotors:
         if rotor.disc_type == "spacer":
-            x[rotors.index(rotor)] = [rotor.disc_type,algo.cycle(rotor.alphabet,(alphabet_size-rotor.steps)%alphabet_size),rotor.disc_type]
+            x[rotors.index(rotor)] = [rotor.disc_type,algo.cycle(rotor.alphabet,(alphabet_size-rotor.steps)%alphabet_size)]
         else:
-            x[rotors.index(rotor)] = [rotor.disc_type,algo.cycle(algo.cycle(rotor.alphabet,(alphabet_size-rotor.steps)%alphabet_size),alphabet_size-rotor.offset),rotor.offset,rotor.turnover,rotor.disc_type]
+            x[rotors.index(rotor)] = [rotor.disc_type,algo.cycle(algo.cycle(rotor.alphabet,(alphabet_size-rotor.steps)%alphabet_size),alphabet_size-rotor.offset),rotor.offset,rotor.turnover]
     
     file.write(json.dumps(x))
     file.close()
