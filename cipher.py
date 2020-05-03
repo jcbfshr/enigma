@@ -78,8 +78,10 @@ def encrypt(plaintext,no_rotors):
     ]
 
     for i in progressbar.progressbar(range(no_rotors),widgets=widgets):
-        rotors.append(Rotor(i+1,-1,secrets.randbelow(95),secrets.randbelow(95)))
-    rotors.insert(0,Spacer(0))
+        if i % 10 == 0:
+            rotors.append(Spacer(i))
+        else:
+            rotors.append(Rotor(i,-1,secrets.randbelow(95),secrets.randbelow(95)))
     ciphertext = ""
 
     for char in plaintext:
@@ -124,12 +126,13 @@ def decrypt(ciphertext,rotors):
         plainchar = char
 
         # return encrypted char through rotors in opposite direction 
-        for x in range(len(rotors)-1,0,-1):
-            # pass unsupported characters
-            try:
-                plainchar = rotors[x].substitute(plainchar,True)
-            except ValueError:
-                plainchar = plainchar
+        for x in range(len(rotors)-1,-1,-1):
+            if rotors[x].disc_type != "spacer":
+                # pass unsupported characters
+                try:
+                    plainchar = rotors[x].substitute(plainchar,True)
+                except ValueError:
+                    plainchar = plainchar
         
         plaintext += plainchar
         print(plainchar,end="") # print characters as encrypted (stream)
