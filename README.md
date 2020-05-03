@@ -2,6 +2,10 @@
 ## About
 Recreation of the Engima cryptographic machine in python, used by the Third Reich and broken by Polish and British cryptanalysts in the Second World War. Do not use this as an encryption standard.
 
+## Dependencies
+- Python 3.x
+- progressbar `>>> pip install progressbar2`
+
 ## Authors
 -  Jacob Fisher
 
