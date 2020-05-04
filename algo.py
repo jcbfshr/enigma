@@ -1,4 +1,4 @@
-import string
+import string,progressbar
 from collections import OrderedDict
 
 alphabet = [chr(i) for i in range(32,127)]
@@ -56,3 +56,34 @@ def write_roman(num):
                 break
 
     return "".join([a for a in roman_num(num)])
+
+# print list with commas and 'and' before last item
+def format_english_list(x):
+    string = ""
+    for i in range(len(x)):
+        string += x[i]
+        if i == (len(x)-2):
+            string += " or "
+        elif i != (len(x)-1):
+            string += ", "
+    return string
+
+# only accept responses found in valid list
+def validate_input(string,valid=["y","n","exit"]):
+    while True:
+        x = input(string).lower()
+        if x in valid:
+            break
+        else:
+            print(f"Input not recognised, please input only {format_english_list(valid)}")
+    return x
+
+# widgets class for progress bar
+class Widgets:
+        def __init__(self,status):
+            self.widgets=[
+                status,": "
+                ' [', progressbar.Timer(), '] ',
+                progressbar.Bar(marker="█"),
+                ' (', progressbar.ETA(), ') ',
+            ]
