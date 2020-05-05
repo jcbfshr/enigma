@@ -1,8 +1,9 @@
-import algo,secrets,store,random,progressbar
+import algo,secrets,store,random,tqdm
+charset = algo.Alphabet()
 
 # rotor to create substition cipher
 class Rotor:
-    def __init__(self,number,alphabet=-1,offset=-1,turnover=-1,alphabet_size=95,disc_type="rotor"):
+    def __init__(self,number,alphabet=-1,offset=-1,turnover=-1,alphabet_size=len(charset.alphabet),disc_type="rotor"):
         # -1 values signify randomise
         self.number = number
 
@@ -39,13 +40,13 @@ class Rotor:
     def substitute(self,char,decrypt=False):
         # run char through opposite direction if decrypting
         if decrypt:
-            return algo.to_char(self.alphabet[algo.to_alphabet_pos(char)])
+            return charset.alphabet[self.alphabet[charset.alphabet.index(char)]]
         else:
-            return algo.to_char(self.alphabet.index(algo.to_alphabet_pos(char)))
+            return charset.alphabet[self.alphabet.index(charset.alphabet.index(char))]
 
 # spacer disc, randomly steps the adjacent rotor by 1-94 steps
 class Spacer:
-    def __init__(self,number,alphabet=-1,alphabet_size=95,disc_type="spacer"):
+    def __init__(self,number,alphabet=-1,alphabet_size=len(charset.alphabet),disc_type="spacer"):
         self.number = number
 
         if alphabet == -1:
@@ -62,117 +63,64 @@ class Spacer:
         self.disc_type = disc_type
     
     # move the rotor by x position(s)
-    def step(self,x=1):
-        self.steps += x
+    def step(self,x=1,store=False):
+        if not store:
+            self.steps += x
         self.alphabet = algo.cycle(self.alphabet,x)
 
-# decyption module given plaintext and number of rotors to encrypt with
-def encrypt(plaintext,no_rotors,using_file=False):
+# randomise rotor configuration
+def create_rotors(no):
     # randomise rotors
     rotors = []
 
-    for i in progressbar.progressbar(range(no_rotors),widgets=algo.Widgets("Setting rotors").widgets):
-        if i % 4 == 0:
+    for i in tqdm.trange(no):
+        if i % (secrets.randbelow(3)+3) == 0:
             rotors.append(Spacer(i))
         else:
-            rotors.append(Rotor(i,-1,secrets.randbelow(95),secrets.randbelow(95)))
-    ciphertext = ""
+            rotors.append(Rotor(i,-1,secrets.randbelow(len(charset.alphabet)),secrets.randbelow(len(charset.alphabet))))
+    return rotors
 
-    if using_file:
-        for i in progressbar.progressbar(range(len(plaintext)),widgets=algo.Widgets("Encrypting file").widgets):
-            cipherchar = plaintext[i]
+# decyption module given plaintext and number of rotors to encrypt with
+def encrypt(char,rotors):
+    char
 
-            for rotor in rotors:
-                # if rotor is a spacer disc (controls random stepping of adjacent rotor)
-                if rotor.disc_type == "spacer":
-                    rotor.step()
-                    rotors[(rotors.index(rotor)+1)%len(rotors)].step(rotor.alphabet[0])
-                else:
-                    if rotor.alphabet[0] == rotor.turnover:
-                        rotors[(rotors.index(rotor)+1)%len(rotors)].step()
-                    # pass unsupported characters
-                    try:
-                        cipherchar = rotor.substitute(cipherchar)
-                    except ValueError:
-                        cipherchar = cipherchar
-            ciphertext += cipherchar
-    else:
-        for char in plaintext:
-            cipherchar = char
-
-            for rotor in rotors:
-                # if rotor is a spacer disc (controls random stepping of adjacent rotor)
-                if rotor.disc_type == "spacer":
-                    rotor.step()
-                    rotors[(rotors.index(rotor)+1)%len(rotors)].step(rotor.alphabet[0])
-                else:
-                    if rotor.alphabet[0] == rotor.turnover:
-                        rotors[(rotors.index(rotor)+1)%len(rotors)].step()
-                    # pass unsupported characters
-                    try:
-                        cipherchar = rotor.substitute(cipherchar)
-                    except ValueError:
-                        cipherchar = cipherchar
-            ciphertext += cipherchar
-
-            if not using_file:
-                print(cipherchar,end="") # print characters as encrypted (stream)
-        if not using_file:
-            print()
-    
-    x = hex(random.getrandbits(128))
-
-    store.store(rotors,x)
-    return [ciphertext,x] if using_file else x
-
+    for rotor in rotors:
+        # if rotor is a spacer disc (controls random stepping of adjacent rotor)
+        if rotor.disc_type == "spacer":
+            rotor.step()
+            rotors[(rotors.index(rotor)+1)%len(rotors)].step(rotor.alphabet[0])
+        else:
+            if rotor.alphabet[0] == rotor.turnover:
+                rotors[(rotors.index(rotor)+1)%len(rotors)].step()
+            # pass unsupported characters
+            try:
+                return rotor.substitute(char)
+            except ValueError:
+                return char
 
 # decyption module given ciphertext and rotors used to encrypt
-def decrypt(ciphertext,rotors,using_file=False):
+def decrypt(char,rotors):
     plaintext = ""
-    if using_file:
-        for i in progressbar.progressbar(range(len(ciphertext)),widgets=algo.Widgets("Decrypting file").widgets):
-            # return rotors to position when encrypting original char
-            for rotor in rotors:
-                # if rotor is a spacer disc (controls random stepping of adjacent rotor)
-                if rotor.disc_type == "spacer":
-                    rotor.step()
-                    rotors[(rotors.index(rotor)+1)%len(rotors)].step(rotor.alphabet[0])
-                elif rotor.alphabet[0] == rotor.turnover:
-                    rotors[(rotors.index(rotor)+1)%len(rotors)].step()
-            plainchar = ciphertext[i]
+    
+    # return rotors to position when encrypting original char
+    for rotor in rotors:
+        # if rotor is a spacer disc (controls random stepping of adjacent rotor)
+        if rotor.disc_type == "spacer":
+            rotor.step()
+            rotors[(rotors.index(rotor)+1)%len(rotors)].step(rotor.alphabet[0])
+        elif rotor.alphabet[0] == rotor.turnover:
+            rotors[(rotors.index(rotor)+1)%len(rotors)].step()
+    plaintext = char
 
-            # return encrypted char through rotors in opposite direction 
-            for x in range(len(rotors)-1,-1,-1):
-                if rotors[x].disc_type != "spacer":
-                    # pass unsupported characters
-                    try:
-                        plainchar = rotors[x].substitute(plainchar,True)
-                    except ValueError:
-                        plainchar = plainchar
-            
-            plaintext += plainchar
-        return plaintext
-    else:
-        for char in ciphertext:
-            # return rotors to position when encrypting original char
-            for rotor in rotors:
-                # if rotor is a spacer disc (controls random stepping of adjacent rotor)
-                if rotor.disc_type == "spacer":
-                    rotor.step()
-                    rotors[(rotors.index(rotor)+1)%len(rotors)].step(rotor.alphabet[0])
-                elif rotor.alphabet[0] == rotor.turnover:
-                    rotors[(rotors.index(rotor)+1)%len(rotors)].step()
-            plainchar = char
+    # return encrypted char through rotors in opposite direction 
+    for x in range(len(rotors)-1,-1,-1):
+        if rotors[x].disc_type != "spacer":
+            # pass unsupported characters
+            try:
+                plaintext = rotors[x].substitute(plaintext,True)
+            except ValueError:
+                plaintext = plaintext
+    return plaintext
 
-            # return encrypted char through rotors in opposite direction 
-            for x in range(len(rotors)-1,-1,-1):
-                if rotors[x].disc_type != "spacer":
-                    # pass unsupported characters
-                    try:
-                        plainchar = rotors[x].substitute(plainchar,True)
-                    except ValueError:
-                        plainchar = plainchar
-            
-            plaintext += plainchar
-            print(plainchar,end="") # print characters as encrypted (stream)
-        print()
+def get_alphabet_size():
+    return len(charset.alphabet)

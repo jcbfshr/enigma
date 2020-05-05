@@ -1,73 +1,74 @@
-import cipher,store,progressbar,algo
-
-widgets=[
-            ' [', progressbar.Timer(), '] ',
-            progressbar.Bar(marker="█"),
-            ' (', progressbar.ETA(), ') ',
-        ]
+import cipher,store,tqdm,algo,random,time
 
 print("""
     Jacob Fisher, MMXX
 
     - never use the same key twice for encryption, a random key is generated every time for encryption
-    - use more than 5,000 rotors
-    - vary the number of rotors used
     - type exit to close the program
 
 """)
 
 mode = algo.validate_input("Encrypt (y/n): ")
 
+# ENCRYPTION
 if mode == "y":
-    no_rotors = int(input("Number of rotors: "))
-    using_file = algo.validate_input("Encrypt file (y/n): ")
-    if using_file == "y":
-        while True:
-            try:
-                # if file exists
-                ref = str(input("File: "))
-                file = open(ref,"r")
-                contents = file.read()
-                file.close()
-                break
-            except FileNotFoundError:
-                print("File not found")
+    while True:
+        # only accept integers
+        try:
+            no_rotors = abs(int(input("Number of rotors: ")))
+            break
+        except ValueError:
+            print("Please only enter a natural number")
+    # randomise rotors
+    rotors = cipher.create_rotors(no_rotors)
 
-        cipher_return = cipher.encrypt(contents,no_rotors,True)
-        print(f"Use key {cipher_return[1]}.rotors to decrypt")
-        file = open(ref,"w")
-        file.write(cipher_return[0])
+    using_file = algo.validate_input("Encrypt a file (y/n): ")
+    if using_file == "y":
+        unencrypted_file = store.contents()
+
+        for i in tqdm.trange(len(unencrypted_file[0])):
+            ciphertext += cipher.decrypt(unencrypted_file[0][i],rotors)
+
+        # overwrite file with encrypted contents
+        file = open(unencrypted_file[1],"w")
+        file.write(ciphertext)
         file.close()
-    
+
     elif using_file == "n":
-        print(f"Use key {cipher.encrypt(input('Plaintext: '),no_rotors)}.rotors to decrypt")
+        plaintext = str(input("Plaintext: "))
+        ciphertext = ""
+
+        bar = tqdm.trange(len(plaintext),desc='ML', leave=True)
+
+        for i in bar:
+            ciphertext += cipher.encrypt(plaintext[i],rotors)
+            bar.set_description(ciphertext)
+            bar.refresh()
+    # Create hex key name and store as file
+    x = hex(random.getrandbits(128))
+    store.store(rotors,str(x),cipher.get_alphabet_size())
+    print(f"Use key {x}.rotors to decrypt")
+
+# DECRYPTION
 elif mode == "n":
-    rotor_settings = store.load(str(input("Rotor settings reference (35 chars): "))[:34])
-    rotors = []
-
-    for i in progressbar.progressbar(range(len(rotor_settings)),widgets=widgets):
-        rotor = rotor_settings[str(i)]
-        if rotor[0] == "spacer":
-            rotors.append(cipher.Spacer(i,rotor[1]))
-        else:
-            rotors.append(cipher.Rotor(i,rotor[1],rotor[2],rotor[3]))
+    rotors = store.load()
     
-    using_file = algo.validate_input("Decrypt file (y/n): ")
+    using_file = algo.validate_input("Decrypt a file (y/n): ")
     if using_file == "y":
-        while True:
-            try:
-                # if file exists
-                ref = str(input("File: "))
-                file = open(ref,"r")
-                contents = file.read()
-                file.close()
-                break
-            except FileNotFoundError:
-                print("File not found")
+        encrypted_file = store.contents()
+        plaintext = ""
 
-        file = open(ref,"w")
-        file.write(cipher.decrypt(contents,rotors,True))
+        for i in tqdm.trange(len(encrypted_file[0])):
+            plaintext += cipher.decrypt(encrypted_file[0][i],rotors)
+
+        # overwrite file with decrypted contents
+        file = open(encrypted_file[1],"w")
+        file.write(plaintext)
         file.close()
     
     elif using_file == "n":
-        cipher.decrypt(input("Ciphertext: "),rotors)
+        ciphertext = str(input("Ciphertext: "))
+        plaintext = ""
+
+        for i in tqdm.trange(len(plaintext)):
+            plaintext += cipher.decrypt(ciphertext[i],rotors)

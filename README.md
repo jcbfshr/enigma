@@ -4,7 +4,7 @@ Recreation of the Engima cryptographic machine in python, used by the Third Reic
 
 ## Dependencies
 - Python 3.x
-- progressbar `>>> pip install progressbar2`
+- tqdm `>>> pip install tqdm`
 
 ## Authors
 -  Jacob Fisher

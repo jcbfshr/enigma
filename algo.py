@@ -1,19 +1,21 @@
-import string,progressbar
+import string
 from collections import OrderedDict
 
-alphabet = [chr(i) for i in range(32,127)]
+# create alphabetical arrary given upper and lower bound
+class Alphabet:
+    def __init__(self,lower=" ",upper="~"):
+        self.lower = ord(lower)
+        self.upper = ord(upper)+1
+        self.alphabet = [chr(i) for i in range(self.lower,self.upper)]
 
-# convert character in alphabet to alphabet pos integer
-def to_alphabet_pos(char):
-    return alphabet.index(char)
+print(ord("a"))
+print(ord("z"))
+print(ord("A"))
+print(ord("Z"))
 
-# convert character in alphabet to alphabet pos integer
-def to_char(pos):
-    return alphabet[pos]
-
-# move to rotor position
+# move first item in list to back pos times
 def cycle(list,pos):
-    for i in range(pos):
+    for each in list:
         list.append(list[0])
         list.pop(0)
     return list
@@ -29,33 +31,6 @@ def format(string,x):
         else:
             string += " "
     return string
-
-# convert integer to roman numeral
-def write_roman(num):
-    roman = OrderedDict()
-    roman[1000] = "M"
-    roman[900] = "CM"
-    roman[500] = "D"
-    roman[400] = "CD"
-    roman[100] = "C"
-    roman[90] = "XC"
-    roman[50] = "L"
-    roman[40] = "XL"
-    roman[10] = "X"
-    roman[9] = "IX"
-    roman[5] = "V"
-    roman[4] = "IV"
-    roman[1] = "I"
-
-    def roman_num(num):
-        for r in roman.keys():
-            x, y = divmod(num, r)
-            yield roman[r] * x
-            num -= (r * x)
-            if num <= 0:
-                break
-
-    return "".join([a for a in roman_num(num)])
 
 # print list with commas and 'and' before last item
 def format_english_list(x):
@@ -77,13 +52,3 @@ def validate_input(string,valid=["y","n","exit"]):
         else:
             print(f"Input not recognised, please input only {format_english_list(valid)}")
     return x
-
-# widgets class for progress bar
-class Widgets:
-        def __init__(self,status):
-            self.widgets=[
-                status,": "
-                ' [', progressbar.Timer(), '] ',
-                progressbar.Bar(marker="█"),
-                ' (', progressbar.ETA(), ') ',
-            ]
